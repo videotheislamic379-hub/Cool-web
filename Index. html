@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="ur" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>میکس موڈز - لائیو پینل</title>
+  <style>
+    /* --- Basic layout --- */
+    :root{
+      --bg:#0b0b0b;
+      --panel-border: #5ee7ff;
+      --accent-magenta: #ff4dd2;
+      --accent-cyan: #8ef0ff;
+      --muted: #cfcfcf;
+      --panel-w: min(420px, 92vw);
+      --rtl-pad: 18px;
+    }
+    html,body{height:100%;margin:0;background:var(--bg);font-family: "Segoe UI", Tahoma, Arial, sans-serif;color:var(--muted);}
+    .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:20px;}
+    /* --- Panel --- */
+    .panel{
+      width:var(--panel-w);
+      background:rgba(0,0,0,0.6);
+      border-radius:14px;
+      border:3px solid var(--panel-border);
+      box-shadow:0 8px 30px rgba(0,0,0,0.8), 0 0 18px rgba(0,255,255,0.03) inset;
+      overflow:hidden;
+      direction:rtl;
+    }
+    .panel .row{padding:16px var(--rtl-pad);display:flex;align-items:center;gap:12px;border-bottom:2px solid rgba(255,255,255,0.03);}
+    .panel .row.header{justify-content:center;padding-top:22px;padding-bottom:14px;}
+    .title{font-size:30px;font-weight:700;color:var(--accent-magenta);text-shadow:0 2px 6px rgba(255,0,200,0.08);}
+    .divider{height:2px;background:transparent;}
+    /* --- Option rows --- */
+    .option-label{flex:1;font-size:22px;color:var(--accent-magenta);font-weight:600;}
+    .radio{
+      width:36px;height:36px;border-radius:50%;
+      border:3px solid rgba(255,255,255,0.12);
+      display:flex;align-items:center;justify-content:center;
+      cursor:pointer;transition:all .18s;
+    }
+    .radio.on{border-color:var(--panel-border);box-shadow:0 0 12px rgba(142,240,255,0.18), 0 0 8px rgba(255,77,210,0.06) inset;}
+    .radio .dot{width:14px;height:14px;border-radius:50%;background:var(--panel-border);opacity:0;transform:scale(.6);transition:.12s;}
+    .radio.on .dot{opacity:1;transform:scale(1);}
+    /* --- Status/Device rows --- */
+    .status-label{font-size:20px;color:var(--accent-cyan);flex:1;font-weight:700;}
+    .device{font-weight:700;color:var(--accent-cyan);font-size:18px;text-align:center;letter-spacing:1px;}
+    /* --- Buttons row --- */
+    .controls{display:flex;gap:10px;padding:12px;justify-content:space-between;}
+    .btn{flex:1;padding:10px 12px;border-radius:8px;border:2px solid rgba(255,255,255,0.06);background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);color:var(--accent-magenta);font-weight:700;cursor:pointer;}
+    .btn.secondary{color:var(--accent-cyan);border-color:rgba(142,240,255,0.06);}
+    .btn.danger{color:#fff;background:linear-gradient(180deg,#ff4d4d,#d91c1c);border:none;}
+    /* --- Progress modal (basic) --- */
+    .overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);}
+    .overlay.show{display:flex;}
+    .modal{width:90%;max-width:420px;background:#071018;border-radius:10px;padding:18px;border:2px solid rgba(142,240,255,0.06);text-align:center;color:var(--muted);}
+    .progress{height:12px;border-radius:8px;background:rgba(255,255,255,0.06);overflow:hidden;margin-top:12px;}
+    .progress > i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--accent-magenta),var(--panel-border));box-shadow:0 4px 14px rgba(255,77,210,0.12) inset;transition:width .25s linear;}
+    .small{font-size:13px;color:#bfcfcf;margin-top:8px;}
+    /* --- Responsive tweaks --- */
+    @media (max-width:420px){
+      .title{font-size:26px;}
+      .option-label{font-size:20px;}
+      .radio{width:32px;height:32px;}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="panel" id="panel">
+      <div class="row header">
+        <div class="title">میکس موڈز 1</div>
+      </div>
+
+      <div class="row">
+        <div class="option-label">میکس بائی پاس</div>
+        <div class="radio" data-key="bypass" title="میکس بائی پاس">
+          <div class="dot"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="option-label">وِنگو ہیک</div>
+        <div class="radio" data-key="wingo" title="ونگو ہیک">
+          <div class="dot"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="status-label">حیثیت: <span id="statusText">آف لائن</span></div>
+      </div>
+
+      <div class="row">
+        <div class="device">OPPO CPH1989</div>
+      </div>
+
+      <div class="row" style="border-bottom:none;padding-bottom:10px;">
+        <div style="font-size:15px;color:var(--accent-cyan)">ڈیوائس ورژن: 11</div>
+      </div>
+
+      <div class="controls" style="padding:14px;">
+        <button class="btn" id="hackBtn">ہیک چلائیں</button>
+        <button class="btn secondary" id="toggleStatus">آن/آف کریں</button>
+        <button class="btn danger" id="exitBtn">باہر نکلیں</button>
+      </div>
+
+      <div style="display:flex;gap:10px;padding:12px;">
+        <button class="btn secondary" id="hideBtn">چھپائیں</button>
+        <div style="flex:1"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Progress overlay -->
+  <div class="overlay" id="overlay">
+    <div class="modal">
+      <div style="font-weight:800;color:var(--accent-magenta);font-size:20px" id="modalTitle">عمل جاری ہے</div>
+      <div class="small" id="modalSub">درخواست بھیجی جا رہی ہے — براہِ مہربانی انتظار کریں</div>
+      <div class="progress"><i id="progBar"></i></div>
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <button class="btn" id="cancelHack">منسوخ کریں</button>
+        <button class="btn secondary" id="finishHack" style="display:none;">ختم کریں</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Small interactive logic
+    (function(){
+      const radios = document.querySelectorAll('.radio');
+      const statusText = document.getElementById('statusText');
+      const toggleStatus = document.getElementById('toggleStatus');
+      const hackBtn = document.getElementById('hackBtn');
+      const overlay = document.getElementById('overlay');
+      const progBar = document.getElementById('progBar');
+      const cancelHack = document.getElementById('cancelHack');
+      const finishHack = document.getElementById('finishHack');
+      const exitBtn = document.getElementById('exitBtn');
+      const hideBtn = document.getElementById('hideBtn');
+      let statusOnline = false;
+      let hackInterval = null;
+
+      // Toggle radio state
+      radios.forEach(r=>{
+        r.addEventListener('click', ()=>{
+          r.classList.toggle('on');
+        });
+      });
+
+      // Toggle status (online/offline)
+      toggleStatus.addEventListener('click', ()=>{
+        statusOnline = !statusOnline;
+        statusText.textContent = statusOnline ? 'آن لائن' : 'آف لائن';
+        // tiny visual cue
+        statusText.style.color = statusOnline ? 'var(--accent-cyan)' : 'var(--accent-magenta)';
+      });
+
+      // Start fake hack
+      hackBtn.addEventListener('click', ()=>{
+        overlay.classList.add('show');
+        progBar.style.width = '0%';
+        document.getElementById('modalTitle').textContent = 'ہیک چل رہا ہے';
+        document.getElementById('modalSub').textContent = 'یہ محض مظاہرہ ہے — اصلی ہیکنگ نقصان دہ/غیرقانونی ہو سکتی ہے';
+        cancelHack.style.display = '';
+        finishHack.style.display = 'none';
+
+        let p = 0;
+        hackInterval = setInterval(()=>{
+          p += Math.random()*12 + 6; // advance randomly
+          if(p >= 100){
+            p = 100;
+            progBar.style.width = p + '%';
+            clearInterval(hackInterval);
+            hackInterval = null;
+            document.getElementById('modalTitle').textContent = 'کامیابی';
+            document.getElementById('modalSub').textContent = 'عمل مکمل ہو گیا۔';
+            cancelHack.style.display = 'none';
+            finishHack.style.display = '';
+          } else {
+            progBar.style.width = p + '%';
+          }
+        }, 450);
+      });
+
+      // Cancel / finish handlers
+      cancelHack.addEventListener('click', ()=>{
+        if(hackInterval) clearInterval(hackInterval);
+        hackInterval = null;
+        overlay.classList.remove('show');
+      });
+      finishHack.addEventListener('click', ()=>{
+        overlay.classList.remove('show');
+      });
+
+      // Hide panel (simple)
+      hideBtn.addEventListener('click', ()=>{
+        document.getElementById('panel').style.opacity = 0.06;
+        document.getElementById('panel').style.pointerEvents = 'none';
+      });
+
+      // Exit (simulate)
+      exitBtn.addEventListener('click', ()=>{
+        // Tiny confirmation
+        if(confirm('کیا آپ واقعی باہر نکلنا چاہتے ہیں؟')){
+          // simulate "exit" by removing panel
+          document.getElementById('panel').remove();
+          const msg = document.createElement('div');
+          msg.style.color = '#bfcfcf';
+          msg.style.margin = '20px';
+          msg.style.fontSize = '16px';
+          msg.textContent = 'پینل بند کر دیا گیا۔ ویب صفحہ کا بقیہ حصہ دستیاب ہے۔';
+          document.querySelector('.wrap').appendChild(msg);
+        }
+      });
+
+      // Accessibility: press Esc to close overlay
+      document.addEventListener('keydown', (e)=>{
+        if(e.key === 'Escape' && overlay.classList.contains('show')){
+          if(hackInterval) clearInterval(hackInterval);
+          hackInterval = null;
+          overlay.classList.remove('show');
+        }
+      });
+
+      // Small: make sure CSS custom props are available in JS (for inline color toggles)
+      const root = getComputedStyle(document.documentElement);
+      // (no further action needed)
+    })();
+  </script>
+</body>
+</html>
